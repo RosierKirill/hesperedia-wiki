@@ -1,0 +1,433 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  SUBSCRIBER
+}
+
+enum MagicForce {
+  LUMEN
+  VESPER
+  AETHER
+  HUMUS
+  SANGUIS
+  NIHIL
+}
+
+enum LocationType {
+  CITY
+  VILLAGE
+  FORTRESS
+  RUIN
+  DUNGEON
+  LANDMARK
+  SACRED_SITE
+  CAMP
+}
+
+enum FactionType {
+  KINGDOM
+  EMPIRE
+  CITY_STATE
+  CULT
+  ORDER
+  GUILD
+  CLAN
+  CHURCH
+  SECRET_SOCIETY
+}
+
+enum CharacterStatus {
+  ALIVE
+  DECEASED
+  UNDEAD
+  UNKNOWN
+  TRANSFORMED
+}
+
+enum CreatureCategory {
+  SANGUIS_CORRUPTION
+  NIHIL_CORRUPTION
+  MONSTER
+  DEMON
+  ORLA_ENTITY
+  TRANSFORMED_ANIMAL
+  HYBRID
+  DEEP_CREATURE
+}
+
+enum CreatureOrigin {
+  NATURAL
+  SANGUIS
+  NIHIL
+  UNDERWORLD
+  ORLA
+  ANCIENT_MAGIC
+  UNKNOWN
+}
+
+enum ArticleCategory {
+  HISTORY
+  MAGIC_SYSTEM
+  CULTURE
+  RELIGION
+  GEOGRAPHY
+  POLITICS
+  EVENT
+  MYTHOLOGY
+}
+
+enum ProjectType {
+  VIDEO_GAME
+  TABLETOP_GAME
+  COMIC
+  MANGA
+  ANIMATION
+  NOVEL
+  SHORT_FILM
+  OTHER
+}
+
+enum ProjectStatus {
+  ANNOUNCED
+  IN_DEVELOPMENT
+  DEMO_AVAILABLE
+  RELEASED
+  ON_HOLD
+  CANCELLED
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  username     String          @unique
+  passwordHash String
+  role         UserRole        @default(SUBSCRIBER)
+  avatarUrl    String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  comments     Comment[]
+  votes        Vote[]
+  donations    Donation[]
+  ratings      ArticleRating[]
+  articles     Article[]
+}
+
+model Realm {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  mapImageUrl String?
+  color       String?
+  order       Int        @default(0)
+  regions     Region[]
+  locations   Location[]
+}
+
+model Region {
+  id            String              @id @default(cuid())
+  name          String
+  slug          String              @unique
+  realmId       String
+  realm         Realm               @relation(fields: [realmId], references: [id])
+  description   String?
+  biome         String?
+  dominantForce MagicForce?
+  mapCoords     Json?
+  imageUrl      String?
+  publishedAt   DateTime?
+  createdAt     DateTime            @default(now())
+  locations     Location[]
+  factions      FactionsOnRegions[]
+  articles      ArticlesOnRegions[]
+}
+
+model Location {
+  id          String                  @id @default(cuid())
+  name        String
+  slug        String                  @unique
+  type        LocationType
+  realmId     String
+  realm       Realm                   @relation(fields: [realmId], references: [id])
+  regionId    String?
+  region      Region?                 @relation(fields: [regionId], references: [id])
+  description String?
+  mapCoords   Json?
+  imageUrl    String?
+  isCapital      Boolean                 @default(false)
+  publishedAt    DateTime?
+  createdAt      DateTime                @default(now())
+  characters     CharactersOnLocations[]
+  homeCharacters Character[]             @relation("CharacterHomeLocation")
+  articles       ArticlesOnLocations[]
+}
+
+model Faction {
+  id            String                @id @default(cuid())
+  name          String
+  slug          String                @unique
+  type          FactionType
+  description   String?
+  logoUrl       String?
+  bannerUrl     String?
+  dominantForce MagicForce?
+  alignment     String?
+  publishedAt   DateTime?
+  createdAt     DateTime              @default(now())
+  characters    CharactersOnFactions[]
+  regions       FactionsOnRegions[]
+  articles      ArticlesOnFactions[]
+}
+
+model Character {
+  id              String                  @id @default(cuid())
+  name            String
+  slug            String                  @unique
+  titles          String[]
+  species         String
+  gender          String?
+  age             String?
+  status          CharacterStatus
+  portraitUrl     String?
+  bannerUrl       String?
+  primaryForce    MagicForce?
+  secondaryForce  MagicForce?
+  magicLevel      Int?
+  biography       String                  @db.Text
+  personality     String?                 @db.Text
+  abilities       String?                 @db.Text
+  history         String?                 @db.Text
+  isMainCharacter Boolean                 @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  homeLocationId  String?
+  homeLocation    Location?               @relation("CharacterHomeLocation", fields: [homeLocationId], references: [id])
+  affiliations    CharactersOnFactions[]
+  locations       CharactersOnLocations[]
+  articles        ArticlesOnCharacters[]
+}
+
+model Creature {
+  id           String                @id @default(cuid())
+  name         String
+  slug         String                @unique
+  category     CreatureCategory
+  subcategory  String?
+  origin       CreatureOrigin
+  primaryForce MagicForce?
+  dangerLevel  Int?
+  description  String                @db.Text
+  abilities    String?               @db.Text
+  weaknesses   String?               @db.Text
+  habitat      String?
+  portraitUrl  String?
+  imageUrl     String?
+  publishedAt  DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  articles     ArticlesOnCreatures[]
+}
+
+model Article {
+  id            String                @id @default(cuid())
+  title         String
+  slug          String                @unique
+  category      ArticleCategory
+  excerpt       String?
+  content       String                @db.Text
+  coverImageUrl String?
+  tags          String[]
+  magicForces   MagicForce[]
+  featured      Boolean               @default(false)
+  authorId      String?
+  author        User?                 @relation(fields: [authorId], references: [id])
+  publishedAt   DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  characters    ArticlesOnCharacters[]
+  creatures     ArticlesOnCreatures[]
+  factions      ArticlesOnFactions[]
+  locations     ArticlesOnLocations[]
+  regions       ArticlesOnRegions[]
+  ratings       ArticleRating[]
+  comments      Comment[]
+}
+
+// ─── Junction tables ──────────────────────────────────────────────────────────
+
+model CharactersOnFactions {
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  characterId String
+  faction     Faction   @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  factionId   String
+
+  @@id([characterId, factionId])
+}
+
+model CharactersOnLocations {
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  characterId String
+  location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId  String
+
+  @@id([characterId, locationId])
+}
+
+model ArticlesOnCharacters {
+  article     Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId   String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  characterId String
+
+  @@id([articleId, characterId])
+}
+
+model ArticlesOnCreatures {
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId  String
+  creature   Creature @relation(fields: [creatureId], references: [id], onDelete: Cascade)
+  creatureId String
+
+  @@id([articleId, creatureId])
+}
+
+model ArticlesOnFactions {
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId String
+  faction   Faction @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  factionId String
+
+  @@id([articleId, factionId])
+}
+
+model ArticlesOnLocations {
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId  String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId String
+
+  @@id([articleId, locationId])
+}
+
+model ArticlesOnRegions {
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId String
+  region    Region  @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  regionId  String
+
+  @@id([articleId, regionId])
+}
+
+model FactionsOnRegions {
+  faction   Faction @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  factionId String
+  region    Region  @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  regionId  String
+
+  @@id([factionId, regionId])
+}
+
+// ─── Community & engagement ───────────────────────────────────────────────────
+
+model Project {
+  id            String        @id @default(cuid())
+  title         String
+  slug          String        @unique
+  type          ProjectType
+  status        ProjectStatus
+  description   String        @db.Text
+  coverImageUrl String?
+  bannerUrl     String?
+  releaseDate   DateTime?
+  links         Json?
+  tags          String[]
+  publishedAt   DateTime?
+  createdAt     DateTime      @default(now())
+}
+
+model Comment {
+  id         String    @id @default(cuid())
+  content    String    @db.Text
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId  String
+  article    Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     Comment?  @relation("CommentThread", fields: [parentId], references: [id])
+  replies    Comment[] @relation("CommentThread")
+  isApproved Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+}
+
+model Vote {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetType String
+  targetId   String
+  value      Int
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, targetType, targetId])
+}
+
+model ArticleRating {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  score     Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])
+}
+
+model CommunityProposal {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  type        String
+  submittedBy String?
+  voteCount   Int      @default(0)
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+}
+
+model Donation {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  amount    Int
+  currency  String   @default("EUR")
+  provider  String
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model MediaAsset {
+  id         String   @id @default(cuid())
+  filename   String
+  url        String
+  type       String
+  mimeType   String
+  size       Int
+  altText    String?
+  tags       String[]
+  uploadedBy String?
+  createdAt  DateTime @default(now())
+}

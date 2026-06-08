@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-cinzel: 'Cinzel', serif;
+  --font-crimson: 'Crimson Text', serif;
+  --font-inter: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply font-body bg-parchment-100 text-ink dark:bg-nihil-900 dark:text-parchment-200;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+
+  a {
+    @apply transition-colors;
+  }
+
+  ::selection {
+    @apply bg-lumen-400/30 text-ink;
+  }
+
+  .dark ::selection {
+    @apply bg-vesper-700/50 text-parchment-100;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-parchment-200 dark:bg-nihil-800;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-parchment-500 dark:bg-nihil-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-lumen-600 dark:bg-lumen-700;
+  }
+}
+
+@layer components {
+  .prose-hesperedia {
+    @apply prose dark:prose-invert prose-headings:font-heading prose-a:text-lumen-600 dark:prose-a:text-lumen-400 prose-blockquote:border-l-lumen-500 max-w-none;
+  }
+
+  .input-base {
+    @apply w-full rounded-lg border border-parchment-300 dark:border-nihil-600 bg-white dark:bg-nihil-800 text-ink dark:text-parchment-100 px-3 py-2 text-sm font-ui focus:outline-none focus:ring-2 focus:ring-lumen-500;
+  }
+}
