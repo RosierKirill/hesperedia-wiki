@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx turbo run build --filter=@hesperedia/web...",
+  "buildCommand": "npm run build -w packages/shared-types && npm run build -w apps/web",
   "outputDirectory": "apps/web/.next",
   "installCommand": "npm install",
   "framework": "nextjs"
